@@ -8,25 +8,6 @@
 
     }}();
   </script>
-  <!-- Google Tag Manager -->
-<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-	new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-	j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-	'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-	})(window,document,'script','dataLayer','GTM-MZ624HK');</script>
-	<!-- End Google Tag Manager -->
-
-
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-0T5G56Q4WM"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-0T5G56Q4WM');
-</script>
-
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -44,27 +25,27 @@
     <li>Personal Details</li>
   </ul>
   <!-- fieldsets -->
-  <fieldset>
+  <fieldset id="form_account">
     <h2 class="fs-title">Create your account</h2>
     <h3 class="fs-subtitle">This is step 1</h3>
-    <input type="text" name="email" placeholder="Email" />
+    <input class="account__email" type="text" name="email" placeholder="Email" />
     <input type="password" name="pass" placeholder="Password" />
     <input type="password" name="cpass" placeholder="Confirm Password" />
     <input type="button" name="next" class="next action-button" value="Next" />
   </fieldset>
-  <fieldset>
+  <fieldset id="form_social">
     <h2 class="fs-title">Social Profiles</h2>
     <h3 class="fs-subtitle">Your presence on the social network</h3>
-    <input type="text" name="twitter" placeholder="Twitter" />
+    <input class="social__twitter" type="text" name="twitter" placeholder="Twitter" />
     <input type="text" name="facebook" placeholder="Facebook" />
     <input type="text" name="gplus" placeholder="Google Plus" />
     <input type="button" name="previous" class="previous action-button" value="Previous" />
     <input type="button" name="next" class="next action-button" value="Next" />
   </fieldset>
-  <fieldset>
+  <fieldset id="form_personal">
     <h2 class="fs-title">Personal Details</h2>
     <h3 class="fs-subtitle">We will never sell it</h3>
-    <input type="text" name="fname" placeholder="First Name" />
+    <input class="personal__fname" type="text" name="fname" placeholder="First Name" />
     <input type="text" name="lname" placeholder="Last Name" />
     <input type="text" name="phone" placeholder="Phone" />
     <textarea name="address" placeholder="Address"></textarea>
@@ -81,12 +62,39 @@ var current_fs, next_fs, previous_fs; //fieldsets
 var left, opacity, scale; //fieldset properties which we will animate
 var animating; //flag to prevent quick multi-click glitches
 
+/// @note once this page loads we have to call analytics.identify
+window && window.analytics.identify();
+
+/// @note after calling identify and page, every subsequent request will use this identity to track
+
 $(".next").click(function(){
 	if(animating) return false;
 	animating = true;
-	
+
 	current_fs = $(this).parent();
 	next_fs = $(this).parent().next();
+
+	/// @note once we call the next function, we want to track this event before triggering the next form
+
+	/// @todo: You need to write a way to get the input values using javacript and jquery, will add samples below
+	/// e.g. see this https://stackoverflow.com/questions/45140912/jquery-javascript-to-find-get-values-of-form-elements-inside-fieldset-using-id
+	const email = $("#form_account .account__email").val();
+	const twitter = $("#form_social .social__twitter").val();
+	const name = $("#form_personal .personal__fname").val();
+
+	analytics.track("Proceed to Next form", {
+		// we are not padding any values here because we need to get them from the form.
+		name,
+		twitter,
+		email,
+
+		/// @note, we are tracking where they were and where they are going to
+		from: current_fs,
+		to: next_fs
+	})
+	/// @note we are console.log() here to debug. remove this when deploying to live version
+	console.log({  action: 'next action', email, twitter, name })
+	
 	
 	//activate next step on progressbar using the index of next_fs
 	$("#progressbar li").eq($("fieldset").index(next_fs)).addClass("active");
@@ -119,12 +127,36 @@ $(".next").click(function(){
 	});
 });
 
+
+// Notice that we do the same thing in the previous action. 
 $(".previous").click(function(){
 	if(animating) return false;
 	animating = true;
 	
 	current_fs = $(this).parent();
 	previous_fs = $(this).parent().prev();
+
+	/// @note once we call the next function, we want to track this event before triggering the next form
+
+	/// @todo: You need to write a way to get the input values using javacript and jquery
+	/// e.g. see this https://stackoverflow.com/questions/45140912/jquery-javascript-to-find-get-values-of-form-elements-inside-fieldset-using-id
+	const email = $("#form_account .account__email").val();
+	const twitter = $("#form_social .social__twitter").val();
+	const name = $("#form_personal .personal__fname").val();
+
+	analytics.track("Proceed to Previous form", {
+		// we are not padding any values here because we need to get them from the form.
+		name,
+		twitter,
+		email,
+
+		/// @note, we are tracking where they were and where they are going to
+		from: current_fs,
+		to: next_fs
+	})
+	/// @note we are console.log() here to debug. remove this when deploying to live version
+	console.log({action: 'previous action',  email, twitter, name })
+	
 	
 	//de-activate current step on progressbar
 	$("#progressbar li").eq($("fieldset").index(current_fs)).removeClass("active");
@@ -154,7 +186,28 @@ $(".previous").click(function(){
 	});
 });
 
+///@note this is the final step and the event here should include all the form values that we have gathered in once Track event
 $(".submit").click(function(){
+
+	/// @todo: You need to write a way to get the input values using javacript and jquery
+	/// e.g. see this https://stackoverflow.com/questions/45140912/jquery-javascript-to-find-get-values-of-form-elements-inside-fieldset-using-id
+	const email = $("#form_account .account__email").val();
+	const twitter = $("#form_social .social__twitter").val();
+	const name = $("#form_personal .personal__fname").val();
+
+	analytics.track("Submit Form", {
+		// we are not padding any values here because we need to get them from the form.
+		name,
+		twitter,
+		email,
+
+		/// @note, we are tracking where they were and where they are going to
+		from: current_fs,
+		to: next_fs
+	})
+	/// @note we are console.log() here to debug. remove this when deploying to live version
+	console.log({ action: 'submit action', email, twitter, name })
+	
 	return false;
 })
 
